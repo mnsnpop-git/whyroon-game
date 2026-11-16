@@ -10,8 +10,8 @@ const kanit = Kanit({
 });
 
 export const metadata: Metadata = {
-  title: "เกมร่าเริง - ปาร์ตี้เกม",
-  applicationName: "เกมร่าเริง - ปาร์ตี้เกม",
+  title: "Whyroon - Party Game",
+  applicationName: "Whyroon - Party Game",
   description: "รวมปาร์ตี้เกมเล่นกับเพื่อนแบบเรียลไทม์ — Doraemon, ใบ้คำแข่งเวลา, Werewolf",
 };
 

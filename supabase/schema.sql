@@ -1,5 +1,5 @@
 -- =====================================================================
---  ราแรง ปาร์ตี้เกม — Supabase schema
+--  Whyroon - Party Game — Supabase schema
 --  วิธีใช้: เปิด Supabase Dashboard > SQL Editor > วางไฟล์นี้ทั้งไฟล์ > Run
 --  (รันซ้ำได้ ไม่พัง — ทุกคำสั่งเป็นแบบ idempotent)
 --

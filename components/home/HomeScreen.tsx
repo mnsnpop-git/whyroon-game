@@ -28,9 +28,9 @@ export function HomeScreen({
       >
         <HomeMascots />
         <h1 className="text-5xl font-extrabold leading-tight tracking-tight">
-          <span className="text-white">เกมร่าเริง</span>
+          <span className="text-white">Whyroon</span>
         </h1>
-        <p className="text-gradient mt-1 text-2xl font-extrabold tracking-tight">ปาร์ตี้เกม</p>
+        <p className="text-gradient mt-1 text-2xl font-extrabold tracking-tight">Party Game</p>
         <p className="mt-3 text-lg text-muted">รวมเกมวงเหล้า วงเพื่อน เล่นพร้อมกันบนมือถือ</p>
       </motion.header>
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { MASCOT_MOODS, MASCOT_POSES, MASCOTS, Mascot, type MascotWho } from "@/components/characters/Mascot";
 
-export const metadata: Metadata = { title: "ตัวละคร · เกมร่าเริง - ปาร์ตี้เกม", robots: { index: false } };
+export const metadata: Metadata = { title: "ตัวละคร · Whyroon - Party Game", robots: { index: false } };
 
 const MOOD_TH = { happy: "ยิ้ม", excited: "ตื่นเต้น", surprised: "ตกใจ", wink: "ขยิบตา", sleepy: "ง่วง", sad: "เศร้า" };
 const POSE_TH = { idle: "ยืนเฉย", wave: "โบกมือ", cheers: "ชนแก้ว", point: "ชี้" };
@@ -11,7 +11,7 @@ export default function CharactersPage() {
   const who = Object.keys(MASCOTS) as MascotWho[];
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="text-3xl font-extrabold">ตัวละครประจำเกมร่าเริง</h1>
+      <h1 className="text-3xl font-extrabold">ตัวละครประจำ Whyroon</h1>
       <p className="mt-1 text-muted">
         ใช้ <code className="rounded bg-panel2 px-1">{`<Mascot who="ra" mood="excited" pose="cheers" />`}</code>
       </p>

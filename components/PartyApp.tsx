@@ -96,6 +96,24 @@ function AppInner() {
     };
   }, []);
 
+  // ถ้าบัญชีเปลี่ยน (เช่น แท็บอื่นเข้าสู่ระบบใหม่) ให้ใช้ id ปัจจุบันเสมอ
+  useEffect(() => {
+    const { data } = getSupabase().auth.onAuthStateChange((_event, session) => {
+      if (session?.user.id) setUserId(session.user.id);
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  /** ใช้ id เดียวกับบัญชีที่เพิ่งส่งคำขอเข้าห้อง */
+  const syncUserId = useCallback(async () => {
+    try {
+      const { userId: uid } = await ensureSession();
+      setUserId(uid);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const goHome = useCallback((message?: string) => {
     saveLastRoom(null);
     setUrlRoom(null);
@@ -130,11 +148,12 @@ function AppInner() {
         return;
       }
       const roomCode = mode === "create" ? (res.data?.code as string) : code!;
+      await syncUserId();
       saveLastRoom(roomCode);
       setUrlRoom(roomCode);
       setView({ name: "room", code: roomCode });
     },
-    [toast],
+    [toast, syncUserId],
   );
 
   let content: React.ReactNode;
@@ -181,7 +200,8 @@ function AppInner() {
           profile={view.profile}
           waitKey={view.waitKey}
           reason={view.reason}
-          onJoined={() => {
+          onJoined={async () => {
+            await syncUserId();
             saveLastRoom(view.code);
             setUrlRoom(view.code);
             setView({ name: "room", code: view.code });
@@ -233,6 +253,14 @@ function RoomGate({
     else if (myStatus === "kicked") onExit("คุณถูกหัวหน้าห้องเชิญออกจากห้อง 👋");
     else if (myStatus === "left") onExit();
   }, [status, myStatus, code, onExit, deleted]);
+
+  // ห้องโหลดแล้วแต่ไม่เจอตัวเราในห้อง → อย่าค้างหน้าโหลดตลอดไป
+  const missing = status === "ready" && !!snap && myStatus === undefined;
+  useEffect(() => {
+    if (!missing) return;
+    const t = setTimeout(() => onExit(`เข้าห้อง ${code} ไม่สำเร็จ ลองกดเข้าห้องอีกครั้งนะ`), 8000);
+    return () => clearTimeout(t);
+  }, [missing, code, onExit]);
 
   if (!snap || status !== "ready" || myStatus !== "active") {
     return <Splash text={`กำลังเข้าห้อง ${code}...`} />;

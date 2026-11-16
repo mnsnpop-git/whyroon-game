@@ -15,7 +15,7 @@ export function HomeMascots() {
   return (
     <button
       type="button"
-      aria-label="น้องร่า และน้องเริง ตัวละครประจำเกมร่าเริง (แตะเพื่อเล่นด้วย)"
+      aria-label="น้องร่า และน้องเริง ตัวละครประจำ Whyroon (แตะเพื่อเล่นด้วย)"
       onClick={() => {
         setTaps((n) => n + 1);
         navigator.vibrate?.(20);
