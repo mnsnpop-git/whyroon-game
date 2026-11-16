@@ -37,7 +37,6 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules",
-    "raraeng-game"
+    "node_modules"
   ]
 }
