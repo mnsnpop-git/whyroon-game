@@ -17,22 +17,34 @@ create table if not exists public.rooms (
   code        text primary key check (code ~ '^[A-Z]{4}$'),
   host_id     uuid not null,
   stage       text not null default 'lobby' check (stage in ('lobby', 'setup', 'playing')),
-  game        text check (game in ('ohana', 'words', 'werewolf')),
+  game        text check (game in ('ohana', 'words', 'werewolf', 'challenge', 'guess', 'spy', 'fill')),
   version     integer not null default 0,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
+
+-- อัปเกรดฐานข้อมูลเดิม: เพิ่มเกม challenge, guess, spy (ใครคือสายลับ), fill (เติมคำ) ใน check constraint
+alter table public.rooms drop constraint if exists rooms_game_check;
+alter table public.rooms add constraint rooms_game_check
+  check (game in ('ohana', 'words', 'werewolf', 'challenge', 'guess', 'spy', 'fill'));
 
 create table if not exists public.players (
   room_code  text not null references public.rooms(code) on delete cascade,
   id         uuid not null,                       -- = auth.uid() ของผู้เล่น
   nickname   text not null check (char_length(nickname) between 1 and 20),
   emoji      text not null check (char_length(emoji) between 1 and 16),
+  avatar     text check (avatar is null or char_length(avatar) <= 20000), -- รูปโปรไฟล์ (data URL)
   status     text not null default 'active' check (status in ('active', 'kicked', 'left')),
   joined_at  timestamptz not null default now(),
   primary key (room_code, id)
 );
 create index if not exists players_id_idx on public.players (id);
+
+-- อัปเกรดฐานข้อมูลเดิม: เพิ่มรูปโปรไฟล์
+alter table public.players add column if not exists avatar text;
+alter table public.players drop constraint if exists players_avatar_check;
+alter table public.players add constraint players_avatar_check
+  check (avatar is null or char_length(avatar) <= 20000);
 
 create table if not exists public.game_states (
   room_code   text primary key references public.rooms(code) on delete cascade,
@@ -134,7 +146,7 @@ grant execute on function public.get_snapshot(text) to authenticated;
 -- ---------- Commit: เขียนการเปลี่ยนแปลงทั้งหมดแบบ atomic + optimistic lock ----------
 -- p_changes keys (ใส่เฉพาะที่เปลี่ยน):
 --   room:            { host_id?, stage?, game? }    (game: null = ล้าง)
---   players:         [ {id, nickname, emoji, status, joined_at?}, ... ]  (upsert)
+--   players:         [ {id, nickname, emoji, avatar?, status, joined_at?}, ... ]  (upsert)
 --   setup:           jsonb
 --   state:           jsonb | null
 --   gameSecret:      jsonb | null
@@ -169,18 +181,20 @@ begin
 
   if p_changes ? 'players' then
     for v_p in select * from jsonb_array_elements(p_changes -> 'players') loop
-      insert into public.players (room_code, id, nickname, emoji, status, joined_at)
+      insert into public.players (room_code, id, nickname, emoji, avatar, status, joined_at)
       values (
         p_code,
         (v_p ->> 'id')::uuid,
         v_p ->> 'nickname',
         v_p ->> 'emoji',
+        v_p ->> 'avatar',
         coalesce(v_p ->> 'status', 'active'),
         coalesce((v_p ->> 'joined_at')::timestamptz, now())
       )
       on conflict (room_code, id) do update
         set nickname = excluded.nickname,
             emoji    = excluded.emoji,
+            avatar   = case when v_p ? 'avatar' then excluded.avatar else public.players.avatar end,
             status   = excluded.status,
             joined_at = excluded.joined_at;
     end loop;

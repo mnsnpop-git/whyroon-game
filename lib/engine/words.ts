@@ -1,6 +1,6 @@
 import { TEAM_COLORS } from "../constants";
 import type { WordResult, WordsSecret, WordsState, WordsUnit } from "../types";
-import { wordsFor } from "../words-data";
+import { WORD_CATEGORIES, wordsFor } from "../words-data";
 import {
   type Changes,
   type Ctx,
@@ -67,6 +67,7 @@ export function startWords(ctx: Ctx): Changes {
     kind: "words",
     mode: s.mode,
     category: s.category,
+    scope: s.scope === "th" ? "th" : "global",
     seconds: s.seconds,
     units,
     unitTurn: 0,
@@ -74,6 +75,8 @@ export function startWords(ctx: Ctx): Changes {
     round: null,
     lastRound: null,
     roundNo: 0,
+    history: [],
+    finishedAt: null,
   };
   const secret: WordsGameSecret = { used: [], results: [] };
   return {
@@ -85,8 +88,8 @@ export function startWords(ctx: Ctx): Changes {
 }
 
 /** สร้างกองคำให้คนใบ้: คำที่ยังไม่เคยออกมาก่อน แล้วต่อท้ายด้วยคำสุ่มใหม่จนครบ n คำ */
-function buildGiverDeck(used: string[], category: WordsState["category"], n: number) {
-  const all = wordsFor(category);
+function buildGiverDeck(used: string[], state: WordsState, n: number) {
+  const all = wordsFor(state.category, state.scope ?? "global");
   const usedSet = new Set(used);
   const out = shuffle(all.filter((w) => !usedSet.has(w)));
   while (out.length < n) out.push(...shuffle(all));
@@ -108,6 +111,7 @@ export function wordsAction(ctx: Ctx, type: string, p: Payload): Changes | null 
   switch (type) {
     case "words.startRound": {
       if (state.phase === "playing") return null;
+      if (state.finishedAt) throw new GameError("เกมจบแล้ว กดเล่นต่อก่อน");
       const unit = state.units[state.unitTurn];
       if (!unit) throw new GameError("ไม่มีทีมที่จะเล่น");
       const giver = currentGiver(unit);
@@ -115,7 +119,7 @@ export function wordsAction(ctx: Ctx, type: string, p: Payload): Changes | null 
         throw new GameError("เฉพาะคนใบ้หรือหัวหน้าห้องที่กดเริ่มได้");
       }
       const secret = getSecret(ctx);
-      const giverDeck = buildGiverDeck(secret.used, state.category, GIVER_DECK_SIZE);
+      const giverDeck = buildGiverDeck(secret.used, state, GIVER_DECK_SIZE);
       const startsAt = ctx.now + COUNTDOWN_MS;
       state.phase = "playing";
       state.round = {
@@ -125,6 +129,7 @@ export function wordsAction(ctx: Ctx, type: string, p: Payload): Changes | null 
         endsAt: startsAt + state.seconds * 1000,
         count: 0,
         correct: 0,
+        pausedAt: null,
       };
       const giverSecret: WordsSecret = { kind: "words", deck: giverDeck };
       return {
@@ -146,8 +151,11 @@ export function wordsAction(ctx: Ctx, type: string, p: Payload): Changes | null 
       }
       if (index < round.count) return null; // ส่งซ้ำ
       if (index > round.count) throw new GameError("ลำดับคำไม่ตรงกัน");
-      if (ctx.now < round.startsAt - 800) throw new GameError("ยังไม่เริ่มจับเวลา");
-      if (ctx.now > round.endsAt + 2000) throw new GameError("หมดเวลาแล้ว!");
+      // กดก่อนหยุดเกมแต่ส่งมาถึงช้านิดหน่อย ยังนับให้
+      if (round.pausedAt && ctx.now > round.pausedAt + 1500) throw new GameError("เกมหยุดอยู่");
+      const at = round.pausedAt ? Math.min(ctx.now, round.pausedAt) : ctx.now;
+      if (at < round.startsAt - 800) throw new GameError("ยังไม่เริ่มจับเวลา");
+      if (at > round.endsAt + 2000) throw new GameError("หมดเวลาแล้ว!");
       const giverSecret = ctx.playerSecrets[round.giver] as unknown as WordsSecret | undefined;
       const word = giverSecret?.deck?.[index];
       if (!word) throw new GameError("คำศัพท์หมดแล้ว");
@@ -161,7 +169,7 @@ export function wordsAction(ctx: Ctx, type: string, p: Payload): Changes | null 
     case "words.endRound": {
       if (state.phase !== "playing" || !state.round) return null;
       const round = state.round;
-      const early = ctx.now < round.endsAt - 500;
+      const early = !!round.pausedAt || ctx.now < round.endsAt - 500;
       if (early && ctx.actor !== round.giver && !isHost(ctx)) return null;
       const secret = getSecret(ctx);
       const unitIdx = state.units.findIndex((u) => u.id === round.unitId);
@@ -173,8 +181,12 @@ export function wordsAction(ctx: Ctx, type: string, p: Payload): Changes | null 
       const giverSecret = ctx.playerSecrets[round.giver] as unknown as WordsSecret | undefined;
       const shown = giverSecret?.deck?.slice(0, round.count + 1) ?? [];
       let used = Array.from(new Set([...secret.used, ...shown]));
-      if (used.length >= wordsFor(state.category).length) used = [];
-      state.lastRound = { ...round, words: secret.results };
+      if (used.length >= wordsFor(state.category, state.scope ?? "global").length) used = [];
+      state.lastRound = { ...round, pausedAt: null, words: secret.results };
+      state.history = [
+        ...(state.history ?? []),
+        { unitId: round.unitId, giver: round.giver, correct: round.correct, count: round.count },
+      ];
       state.round = null;
       state.phase = "summary";
       state.roundNo += 1;
@@ -184,6 +196,84 @@ export function wordsAction(ctx: Ctx, type: string, p: Payload): Changes | null 
         gameSecret: { used, results: [] } satisfies WordsGameSecret,
         clearPlayerSecrets: true,
       };
+    }
+
+    case "words.pause": {
+      if (state.phase !== "playing" || !state.round) return null;
+      const round = state.round;
+      if (round.pausedAt) return null;
+      if (ctx.actor !== round.giver && !isHost(ctx)) {
+        throw new GameError("เฉพาะคนใบ้หรือหัวหน้าห้องที่หยุดเกมได้");
+      }
+      if (ctx.now >= round.endsAt) return null; // หมดเวลาไปแล้ว
+      round.pausedAt = ctx.now;
+      return { state };
+    }
+
+    case "words.resume": {
+      if (state.phase !== "playing" || !state.round) return null;
+      const round = state.round;
+      if (!round.pausedAt) return null;
+      if (ctx.actor !== round.giver && !isHost(ctx)) {
+        throw new GameError("เฉพาะคนใบ้หรือหัวหน้าห้องที่เล่นต่อได้");
+      }
+      // เลื่อนเวลาเริ่ม/จบออกไปเท่ากับช่วงที่หยุด
+      const shift = Math.max(0, ctx.now - round.pausedAt);
+      round.startsAt += shift;
+      round.endsAt += shift;
+      round.pausedAt = null;
+      return { state };
+    }
+
+    case "words.setCategory": {
+      requireHost(ctx);
+      if (state.phase === "playing") throw new GameError("รอให้จบรอบนี้ก่อนค่อยเปลี่ยนหมวด");
+      // ส่งมาเฉพาะที่จะเปลี่ยน: category และ/หรือ scope
+      let category = state.category;
+      if (p.category !== undefined) {
+        const found = WORD_CATEGORIES.find((c) => c.id === p.category);
+        if (!found) throw new GameError("ไม่พบหมวดนี้");
+        category = found.id;
+      }
+      let scope = state.scope ?? "global";
+      if (p.scope !== undefined) {
+        if (p.scope !== "th" && p.scope !== "global") throw new GameError("ข้อมูลไม่ถูกต้อง");
+        scope = p.scope;
+      }
+      if (category === state.category && scope === (state.scope ?? "global")) return null;
+      state.category = category;
+      state.scope = scope;
+      // จำหมวดล่าสุดไว้ในหน้าตั้งค่าด้วย
+      return { state, setup: { ...ctx.setup, words: { ...ctx.setup.words, category, scope } } };
+    }
+
+    case "words.finish": {
+      requireHost(ctx);
+      if (state.phase === "playing") throw new GameError("รอให้จบรอบนี้ก่อนค่อยจบเกม");
+      if (state.finishedAt) return null;
+      state.finishedAt = ctx.now;
+      return { state };
+    }
+
+    case "words.resumeGame": {
+      requireHost(ctx);
+      if (!state.finishedAt) return null;
+      state.finishedAt = null;
+      return { state };
+    }
+
+    case "words.restart": {
+      requireHost(ctx);
+      if (state.phase === "playing") throw new GameError("รอให้จบรอบนี้ก่อน");
+      state.units = state.units.map((u) => ({ ...u, score: 0, nextMember: 0 }));
+      state.unitTurn = 0;
+      state.phase = "ready";
+      state.round = null;
+      state.lastRound = null;
+      state.roundNo = 0;
+      state.history = [];
+      state.finishedAt = null;
+      return { state };
     }
 
     case "words.adjustScore": {
@@ -208,6 +298,26 @@ export function wordsAction(ctx: Ctx, type: string, p: Payload): Changes | null 
     }
   }
   throw new GameError("ไม่รู้จักคำสั่งนี้");
+}
+
+/** ผู้เล่นที่เข้ามาระหว่างเกม (ระหว่างรอบ) → เล่นเดี่ยว: เพิ่มเป็นผู้เล่นใหม่ / แบ่งทีม: เข้าทีมที่คนน้อยที่สุด */
+export function wordsAddPlayer(state: WordsState, player: { id: string; nickname: string; emoji: string }) {
+  if (state.units.some((u) => u.members.includes(player.id))) return state;
+  const units = state.units.map((u) => ({ ...u, members: [...u.members] }));
+  if (state.mode === "solo") {
+    units.push({
+      id: player.id,
+      name: `${player.emoji} ${player.nickname}`,
+      color: TEAM_COLORS[units.length % TEAM_COLORS.length].hex,
+      members: [player.id],
+      score: 0,
+      nextMember: 0,
+    });
+  } else if (units.length > 0) {
+    const smallest = units.reduce((a, b) => (b.members.length < a.members.length ? b : a));
+    smallest.members.push(player.id);
+  }
+  return { ...state, units };
 }
 
 export function wordsRemovePlayer(state: WordsState, id: string): WordsState {

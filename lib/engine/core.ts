@@ -3,6 +3,16 @@ import type { GameSetup, GameState, Player, Room } from "../types";
 /** ข้อผิดพลาดที่แสดงให้ผู้เล่นเห็นได้ (ข้อความภาษาไทย) */
 export class GameError extends Error {}
 
+/** เข้าห้องตอนนี้ไม่ได้ ต้องรอจบตาก่อน — key คือ "ตา" ปัจจุบัน ให้ client ส่งกลับมาตอนลองใหม่ */
+export class WaitError extends GameError {
+  constructor(
+    message: string,
+    public key: string,
+  ) {
+    super(message);
+  }
+}
+
 export interface Ctx {
   room: Room;
   players: Player[];

@@ -1,11 +1,27 @@
 import type { GameId, GameSetup, Rank, WWRole } from "./types";
 
-export const EMOJIS = [
+/** อิโมจิโปรไฟล์ แบ่งหมวด (หมวดแรก = ค่าเริ่มต้นของหน้าเลือก) */
+export const EMOJI_GROUPS: { id: string; icon: string; name: string; emojis: string[] }[] = [
+  { id: "faces", icon: "😎", name: "ตัวละคร", emojis: ["🤠", "😎", "🥸", "🤪", "🤡", "👻", "👽", "🤖", "💩", "🧟", "🦸", "🦹", "🧙", "🧚", "🧛", "🧜", "🧞", "🥷", "🤓", "😇", "🥳", "😜", "🤩", "😈", "👹", "👺", "💀", "🎃", "👶", "🧒", "👦", "👧", "🧑", "👱", "👩", "👨", "🧓", "👴", "👵"] },
+  { id: "animals", icon: "🐶", name: "สัตว์", emojis: ["🐶", "🐱", "🐭", "🐹", "🐰", "🐇", "🦊", "🐻", "🐼", "🐻‍❄️", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🙈", "🙉", "🙊", "🐒", "🦍", "🦧", "🐔", "🐓", "🐧", "🐦", "🐤", "🐣", "🐥", "🦆", "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🦓", "🦒", "🐘", "🦣", "🦛", "🦏", "🐪", "🐫", "🦘", "🦬", "🐃", "🐂", "🐄", "🐎", "🐖", "🐏", "🐑", "🦙", "🐐", "🦌", "🐕", "🐩", "🦮", "🐈", "🐈‍⬛", "🐅", "🐆", "🦝", "🦨", "🦡", "🦫", "🦦", "🦥", "🐁", "🐀", "🐿️", "🦔", "🦃", "🦤", "🦚", "🦜", "🦢", "🦩", "🕊️", "🐢", "🐍", "🦎", "🦖", "🦕", "🐊", "🐉", "🐲", "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🦭", "🐚", "🐝", "🪱", "🐛", "🦋", "🐌", "🐞", "🐜", "🪰", "🪲", "🪳", "🦟", "🦗", "🕷️", "🦂", "🦠"] },
+  { id: "plants", icon: "🌵", name: "ต้นไม้ & ดอกไม้", emojis: ["🌱", "🪴", "🌲", "🌳", "🌴", "🌵", "🌾", "🌿", "☘️", "🍀", "🍁", "🍂", "🍃", "🪹", "🪺", "💐", "🌸", "💮", "🪷", "🏵️", "🌹", "🥀", "🌺", "🌻", "🌼", "🌷"] },
+  { id: "fruits", icon: "🍓", name: "ผลไม้", emojis: ["🍎", "🍏", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🫒"] },
+  { id: "veggies", icon: "🥦", name: "ผัก", emojis: ["🥑", "🍆", "🥔", "🥕", "🌽", "🌶️", "🫑", "🥒", "🥬", "🥦", "🧄", "🧅", "🍄", "🥜", "🫘", "🌰"] },
+  { id: "food", icon: "🍕", name: "อาหาร", emojis: ["🍕", "🍔", "🍟", "🌭", "🥪", "🌮", "🌯", "🫔", "🥙", "🧆", "🥚", "🍳", "🥘", "🍲", "🫕", "🥣", "🥗", "🍿", "🧈", "🧂", "🥫", "🍞", "🥐", "🥖", "🫓", "🥨", "🥯", "🥞", "🧇", "🧀", "🍖", "🍗", "🥩", "🥓", "🍱", "🍘", "🍙", "🍚", "🍛", "🍜", "🍝", "🍠", "🍢", "🍣", "🍤", "🍥", "🥟", "🥠", "🥡", "🦪"] },
+  { id: "sweets", icon: "🍩", name: "ขนม & เครื่องดื่ม", emojis: ["🍦", "🍧", "🍨", "🍩", "🍪", "🎂", "🍰", "🧁", "🥧", "🍫", "🍬", "🍭", "🍮", "🍯", "🥮", "🍡", "🧋", "🥤", "🧃", "🍼", "🥛", "☕", "🫖", "🍵", "🍶", "🍺", "🍻", "🥂", "🍷", "🥃", "🍸", "🍹", "🧉", "🧊"] },
+  { id: "weather", icon: "⛅", name: "อากาศ & ธรรมชาติ", emojis: ["☀️", "🌤️", "⛅", "🌥️", "☁️", "🌦️", "🌧️", "⛈️", "🌩️", "🌨️", "❄️", "☃️", "⛄", "🌬️", "💨", "🌪️", "🌫️", "🌈", "☂️", "☔", "⚡", "🔥", "💧", "🌊", "🌙", "🌛", "🌝", "🌞", "⭐", "🌟", "✨", "☄️", "🌍", "🪐"] },
+];
+
+/** อิโมจิเดิมก่อนแบ่งหมวด — ต้องอยู่ในรายการเสมอ ไม่งั้นโปรไฟล์ที่บันทึกไว้จะใช้ไม่ได้ */
+const LEGACY_EMOJIS = [
   "🐸", "🦄", "🐷", "🐵", "🙈", "🐔", "🦖", "🐙",
   "🦊", "🐼", "🐨", "🐯", "🤡", "👻", "👽", "🤖",
   "💩", "🥑", "🍕", "🌶️", "🦩", "🐧", "🐳", "🦥",
   "🤠", "😎", "🥸", "🤪", "🧟", "🦸", "🐶", "🐱",
 ];
+
+/** ทุกอิโมจิที่เลือกได้ (ไม่ซ้ำ) — ใช้ตรวจฝั่งเซิร์ฟเวอร์ด้วย */
+export const EMOJIS: string[] = Array.from(new Set([...LEGACY_EMOJIS, ...EMOJI_GROUPS.flatMap((g) => g.emojis)]));
 
 export const ROOM_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // ไม่มี I, O กันสับสน
 
@@ -27,32 +43,86 @@ export const GAMES: {
   emoji: string;
   color: string;
   players: string;
+  category: "board" | "quick";
+  /** คำค้นเพิ่มเติม (อังกฤษ/คำพ้อง) สำหรับช่องค้นหาเกม */
+  keywords: string;
 }[] = [
   {
     id: "ohana",
-    title: "การ์ดโอฮาน่า",
+    title: "Doraemon",
     subtitle: "เกมไพ่ปาร์ตี้ จั่วแล้วทำตามกติกา",
     emoji: "🃏",
-    color: "#EC4899",
+    color: "#38BDF8",
     players: "เล่นเดี่ยว วนตามลำดับ",
+    category: "board",
+    keywords: "doraemon โดเรม่อน ไพ่ card cards drinking คิงส์คัพ kings cup จั่วไพ่",
   },
   {
     id: "words",
     title: "ใบ้คำแข่งเวลา",
     subtitle: "ใบ้ให้ไว ทายให้ถูก ก่อนหมดเวลา",
     emoji: "⏱️",
-    color: "#FACC15",
+    color: "#F2C94C",
     players: "เดี่ยว หรือ แบ่งทีม",
+    category: "quick",
+    keywords: "word guessing charades ใบ้ ทายคำ แข่งเวลา ทีม team timer",
   },
   {
     id: "werewolf",
     title: "Werewolf",
     subtitle: "ล่าปริศนามนุษย์หมาป่าในหมู่บ้าน",
     emoji: "🐺",
-    color: "#8B5CF6",
+    color: "#34D399",
     players: "ทุกคนในห้อง (4 คนขึ้นไป)",
+    category: "board",
+    keywords: "werewolf หมาป่า มนุษย์หมาป่า หมู่บ้าน social deduction ฆาตกร โหวต",
+  },
+  {
+    id: "challenge",
+    title: "ท้าทาย & ห้าม",
+    subtitle: "จั่วการ์ดคำสั่งหรือการ์ดห้าม พลาดเมื่อไหร่ดื่ม!",
+    emoji: "🎴",
+    color: "#FB7185",
+    players: "เล่นเดี่ยว วนตามลำดับ",
+    category: "quick",
+    keywords: "challenge forbidden truth dare ท้าทาย การ์ดห้าม คำสั่ง ดื่ม card",
+  },
+  {
+    id: "guess",
+    title: "ใบ้คำ-ทายคำ",
+    subtitle: "คนใบ้ตั้งคำลับ เพื่อนแข่งกันทายก่อนหมดเวลา",
+    emoji: "🤫",
+    color: "#A3E635",
+    players: "ผลัดกันเป็นคนใบ้ (2 คนขึ้นไป)",
+    category: "quick",
+    keywords: "guess word secret ใบ้คำ ทายคำ คำลับ charades",
+  },
+  {
+    id: "spy",
+    title: "ใครคือสายลับ?",
+    subtitle: "ทุกคนรู้สถานที่ลับ ยกเว้นสายลับ — จับให้ได้ก่อนโดนหลอก",
+    emoji: "🕵️",
+    color: "#C084FC",
+    players: "ทุกคนในห้อง (3 คนขึ้นไป)",
+    category: "board",
+    keywords: "spy สายลับ spyfall location สถานที่ จับผิด โหวต deduction",
+  },
+  {
+    id: "fill",
+    title: "เติมคำในช่องว่าง",
+    subtitle: "เดาคำจากตัวอักษรที่โผล่มา ใครพิมพ์ถูกก่อนได้แต้ม",
+    emoji: "🧩",
+    color: "#22D3EE",
+    players: "เดี่ยว หรือ แบ่งทีม (2 คนขึ้นไป)",
+    category: "quick",
+    keywords: "fill blank puzzle word เติมคำ ช่องว่าง ตัวอักษร พิมพ์ไว quiz",
   },
 ];
+
+export const GAME_CATEGORIES = [
+  { id: "board", title: "🎲 บอร์ดเกม", subtitle: "Board Games · เล่นยาว ใช้หัวคิด" },
+  { id: "quick", title: "⚡ เกมไว", subtitle: "Quick Party Games · เล่นปุ๊บ ฮาปั๊บ" },
+] as const;
 
 // ---------- Ohana ----------
 export const CARD_RULES: Record<Rank, { title: string; detail: string; icon: string }> = {
@@ -74,10 +144,45 @@ export const CARD_RULES: Record<Rank, { title: string; detail: string; icon: str
     detail: "ใครทำไม่ได้ดื่ม 1 แก้ว (กฎเปลี่ยนเมื่อมีคนจั่ว 10 ใบถัดไป)",
     icon: "📜",
   },
-  J: { title: "แจ็คจับหน้า!", detail: "ทำท่าทางบนใบหน้าตามคนที่ได้ J ใครทำช้าสุดดื่ม 1 แก้ว", icon: "😜" },
+  J: { title: "แจ็คจับหน้า!", detail: "คนที่ได้ J เป็นแจ็คจนกว่าจะมีคนจั่ว J ใบถัดไป เมื่อแจ็คทำท่าบนใบหน้า ทุกคนต้องทำตาม ใครช้าสุดดื่ม 1 แก้ว", icon: "😜" },
   Q: { title: "แหม่มไม่มีเพื่อนคบ!", detail: "ห้ามคุยกับคนที่เป็น Q ใครเผลอคุยด้วยดื่ม 1 แก้ว", icon: "🤐" },
   K: { title: "กติกาพิเศษ K", detail: "", icon: "👑" },
 };
+
+/**
+ * ไพ่ที่ต้องเลือกคนดื่ม
+ *  - min/max: จำนวนคนที่เลือกได้ (max = 0 คือไม่จำกัด)
+ *  - withDrawer: คนจั่วดื่มด้วยเสมอ (ไม่ต้องเลือกตัวเอง)
+ *  - allowDrawer: เลือกคนจั่วเองได้
+ *  - neighbor: เลือกคนข้าง ๆ ไว้ให้ก่อน (ตามลำดับการจั่ว) -1 = คนก่อนหน้า, 1 = คนถัดไป
+ *  - amount: ระบุจำนวนแก้วได้
+ */
+export const DRINK_PICK: Partial<
+  Record<
+    Rank,
+    { label: string; min: number; max: number; withDrawer?: boolean; allowDrawer?: boolean; neighbor?: -1 | 1; amount?: boolean }
+  >
+> = {
+  "2": { label: "เลือกเพื่อนดื่มด้วย 1 คน", min: 1, max: 1, withDrawer: true },
+  "3": { label: "เลือกเพื่อนดื่มด้วย 2 คน", min: 2, max: 2, withDrawer: true },
+  "4": { label: "ใครนั่งซ้ายมือ?", min: 1, max: 1, neighbor: -1 },
+  "6": { label: "ใครนั่งขวามือ?", min: 1, max: 1, neighbor: 1 },
+  "9": { label: "ใครแพ้มินิเกม?", min: 1, max: 0, allowDrawer: true, amount: true },
+  J: { label: "ใครทำตามช้าสุด?", min: 1, max: 0, amount: true },
+  K: { label: "ใครต้องดื่มตามกติกา K?", min: 0, max: 0, allowDrawer: true, amount: true },
+};
+
+/** สาเหตุการดื่มที่เกิดได้ทุกเวลา (ปุ่ม "สั่งดื่ม") */
+export const DRINK_REASONS = [
+  "😜 ทำตามแจ็คช้า (J)",
+  "🤐 คุยกับแหม่ม (Q)",
+  "✊ นิ้วโผล่ ไม่กำมือ",
+  "📜 ผิดกฎข้อ 10",
+  "🎮 แพ้มินิเกม",
+  "👑 กติกา K",
+];
+
+export const cardDrinkReason = (rank: Rank) => `🃏 ไพ่ ${rank}`;
 
 export const K_RULE_SUGGESTIONS = [
   "คนจั่วเลือกใครก็ได้ 1 คน ดื่มหมดแก้ว",
@@ -171,6 +276,7 @@ export function defaultSetup(): GameSetup {
     words: {
       mode: "team",
       category: "all",
+      scope: "global",
       seconds: 60,
       teams: [],
       soloOrder: [],
@@ -180,6 +286,46 @@ export function defaultSetup(): GameSetup {
       nightSeconds: 30,
       discussSeconds: 180,
       voteSeconds: 60,
+    },
+    challenge: {
+      participants: [],
+      timers: true,
+    },
+    guess: {
+      participants: [],
+      seconds: 60,
+      laps: 1,
+      giverPoint: true,
+    },
+    spy: {
+      participants: [],
+      minutes: 5,
+      spies: 1,
+    },
+    fill: {
+      participants: [],
+      mode: "solo",
+      teams: [],
+      questions: 10,
+      seconds: 30,
+    },
+  };
+}
+
+/** ค่า setup ที่ครบทุกช่อง (เติมค่า default ให้ส่วนที่ขาด) */
+export function fullSetup(raw: Partial<GameSetup> | null | undefined): GameSetup {
+  const d = defaultSetup();
+  return {
+    ohana: { ...d.ohana, ...(raw?.ohana ?? {}) },
+    words: { ...d.words, ...(raw?.words ?? {}) },
+    challenge: { ...d.challenge, ...(raw?.challenge ?? {}) },
+    guess: { ...d.guess, ...(raw?.guess ?? {}) },
+    spy: { ...d.spy, ...(raw?.spy ?? {}) },
+    fill: { ...d.fill, ...(raw?.fill ?? {}) },
+    werewolf: {
+      ...d.werewolf,
+      ...(raw?.werewolf ?? {}),
+      roles: { ...d.werewolf.roles, ...(raw?.werewolf?.roles ?? {}) },
     },
   };
 }

@@ -17,11 +17,20 @@ export function getAdmin(): SupabaseClient {
 }
 
 /** ส่งสัญญาณ "sync" ผ่าน Realtime Broadcast (REST) ให้ทุกเครื่องในห้องดึงสถานะใหม่ทันที */
-export async function broadcastSync(code: string, version: number) {
+export function broadcastSync(code: string, version: number) {
+  return broadcastEvent(code, "sync", { version });
+}
+
+/** แจ้งทุกเครื่องว่าหัวหน้าห้องลบห้องแล้ว */
+export function broadcastDeleted(code: string) {
+  return broadcastEvent(code, "deleted", {});
+}
+
+async function broadcastEvent(code: string, event: string, payload: Record<string, unknown>) {
   const supabase = getAdmin();
   const channel = supabase.channel(`room:${code}`);
   try {
-    await channel.httpSend("sync", { version }, { timeout: 3000 });
+    await channel.httpSend(event, payload, { timeout: 3000 });
   } catch {
     // ไม่เป็นไร — client ยังมี postgres_changes และ polling สำรอง
   } finally {

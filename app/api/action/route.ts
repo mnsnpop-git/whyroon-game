@@ -4,12 +4,14 @@ import {
   type Changes,
   type Ctx,
   GameError,
+  WaitError,
   cleanEmoji,
+  cleanAvatar,
   cleanNickname,
   fullSetup,
   reduce,
 } from "@/lib/engine";
-import { broadcastSync, getAdmin } from "@/lib/supabase/server";
+import { broadcastDeleted, broadcastSync, getAdmin } from "@/lib/supabase/server";
 import type { ActionRequest, ActionResponse, GameState, Player, Room } from "@/lib/types";
 
 const MAX_ATTEMPTS = 8;
@@ -77,6 +79,7 @@ function toCommitPayload(c: Changes) {
       id: p.id,
       nickname: p.nickname,
       emoji: p.emoji,
+      avatar: p.avatar ?? null,
       status: p.status,
       joined_at: p.joined_at,
     }));
@@ -108,6 +111,17 @@ async function createRoom(actor: string, payload: Record<string, unknown>) {
       await db.from("rooms").delete().eq("code", code);
       throw new Error((p.error ?? g.error)!.message);
     }
+    // รูปโปรไฟล์ใส่แยก: ถ้าฐานข้อมูลยังไม่มีคอลัมน์ avatar ก็ยังสร้างห้องได้ตามปกติ
+    let avatar: string | null = null;
+    try {
+      avatar = cleanAvatar(payload.avatar);
+    } catch {
+      avatar = null;
+    }
+    if (avatar) {
+      const { error: avErr } = await db.from("players").update({ avatar }).eq("room_code", code).eq("id", actor);
+      if (avErr) console.warn("[avatar] ยังไม่ได้รัน SQL เพิ่มคอลัมน์ avatar:", avErr.message);
+    }
     return code;
   }
   throw new GameError("สร้างห้องไม่สำเร็จ ลองใหม่อีกครั้ง");
@@ -134,6 +148,20 @@ export async function POST(req: Request) {
     }
 
     const code = normalizeCode(body.code);
+
+    if (body.type === "room.delete") {
+      const ctx = await loadCtx(code, actor);
+      if (!ctx) return json({ ok: false, error: `ไม่พบห้อง ${code}` }, 404);
+      if (ctx.room.host_id !== actor) {
+        return json({ ok: false, error: "เฉพาะหัวหน้าห้องเท่านั้นที่ลบห้องได้" }, 403);
+      }
+      // ข้อมูลผู้เล่น/สถานะเกม/ความลับ ถูกลบตามด้วย on delete cascade
+      const { error } = await getAdmin().from("rooms").delete().eq("code", code);
+      if (error) throw new Error(error.message);
+      after(() => broadcastDeleted(code));
+      return json({ ok: true });
+    }
+
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const ctx = await loadCtx(code, actor);
       if (!ctx) return json({ ok: false, error: `ไม่พบห้อง ${code}` }, 404);
@@ -156,8 +184,15 @@ export async function POST(req: Request) {
     }
     return json({ ok: false, error: "ระบบยุ่งมาก ลองกดอีกครั้งนะ" }, 409);
   } catch (e) {
+    if (e instanceof WaitError) {
+      return json({ ok: false, error: e.message, data: { wait: true, key: e.key } }, 409);
+    }
     if (e instanceof GameError) return json({ ok: false, error: e.message }, 400);
     console.error("[action]", body.type, e);
+    if (e instanceof Error && e.message.includes("rooms_game_check")) {
+      // ฐานข้อมูลยังไม่รู้จักเกมใหม่ → ต้องรัน supabase/schema.sql อีกครั้ง
+      return json({ ok: false, error: "ฐานข้อมูลยังไม่รองรับเกมนี้ — ให้ผู้ดูแลรัน supabase/schema.sql ใน Supabase ก่อน" }, 500);
+    }
     return json({ ok: false, error: "เกิดข้อผิดพลาดบนเซิร์ฟเวอร์" }, 500);
   }
 }

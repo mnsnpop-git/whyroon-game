@@ -1,26 +1,263 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/*
+ * Modern Dark Glassmorphism theme
+ * ชื่อ token เดิม (violet/pink/coral ...) ยังคงไว้เพื่อไม่ให้กระทบคอมโพเนนต์
+ * แต่ค่าสีถูกเปลี่ยนเป็นชุดสีใหม่ทั้งหมด
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-kanit), ui-sans-serif, system-ui, sans-serif;
+
+  /* พื้นผิว */
+  --color-ink: #090d16;
+  --color-panel: rgb(255 255 255 / 0.05);
+  --color-panel2: rgb(255 255 255 / 0.08);
+  --color-line: rgb(255 255 255 / 0.14);
+  --color-muted: #94a3b8;
+  --color-night: #070b18;
+
+  /* สีเน้น */
+  --color-violet: #3b82f6; /* electric blue (แทนม่วงเดิม) */
+  --color-pink: #2dd4bf; /* aqua teal (แทนชมพูเดิม) */
+  --color-sun: #f2c94c; /* champagne gold */
+  --color-mint: #10b981; /* neon mint */
+  --color-coral: #fb7185; /* soft rose coral */
+  --color-sky: #38bdf8; /* cyber blue */
+  --color-gold: #d9b979;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background-color: #090d16;
+  color: #f1f5f9;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  min-height: 100dvh;
+}
+
+::selection {
+  background: rgb(56 189 248 / 0.35);
+}
+
+/* ---------- พื้นหลัง: ดำอมน้ำเงิน + ambient glow ---------- */
+.ambient-bg {
+  position: relative;
+  isolation: isolate;
+  background-color: #090d16;
+}
+.ambient-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(60vmax 45vmax at 8% -5%, rgb(56 189 248 / 0.16), transparent 60%),
+    radial-gradient(50vmax 40vmax at 100% 25%, rgb(16 185 129 / 0.11), transparent 60%),
+    radial-gradient(55vmax 45vmax at 30% 110%, rgb(59 130 246 / 0.13), transparent 60%),
+    radial-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size: auto, auto, auto, 24px 24px;
+}
+
+.party-bg {
+  background-color: #090d16;
+  background-image:
+    radial-gradient(circle at 10% 0%, rgb(56 189 248 / 0.16), transparent 45%),
+    radial-gradient(circle at 95% 30%, rgb(16 185 129 / 0.11), transparent 40%),
+    radial-gradient(circle at 30% 100%, rgb(59 130 246 / 0.12), transparent 45%);
+}
+
+.night-bg {
+  background-color: #050812;
+  background-image:
+    radial-gradient(circle at 80% 6%, rgb(226 232 240 / 0.14), transparent 16%),
+    radial-gradient(circle at 10% 80%, rgb(59 130 246 / 0.12), transparent 45%),
+    radial-gradient(rgb(255 255 255 / 0.22) 1px, transparent 1.5px),
+    radial-gradient(rgb(255 255 255 / 0.1) 1px, transparent 1px);
+  background-size: auto, auto, 90px 90px, 37px 37px;
+  background-position: 0 0, 0 0, 10px 20px, 0 0;
+}
+
+.day-bg {
+  background-color: #0b1220;
+  background-image:
+    radial-gradient(circle at 85% 0%, rgb(242 201 76 / 0.2), transparent 32%),
+    radial-gradient(circle at 10% 90%, rgb(16 185 129 / 0.14), transparent 40%),
+    radial-gradient(circle at 50% 40%, rgb(56 189 248 / 0.08), transparent 50%);
+}
+
+@layer components {
+  /* ---------- ปุ่ม: ขอบบาง + glow + micro-interaction ---------- */
+  .btn-3d {
+    border: 1px solid rgb(255 255 255 / 0.12);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.14),
+      0 8px 24px -12px rgb(0 0 0 / 0.7);
+    transition:
+      transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 220ms ease,
+      filter 220ms ease,
+      background-color 220ms ease,
+      border-color 220ms ease,
+      opacity 220ms ease;
+  }
+  .btn-3d:hover:not(:disabled) {
+    filter: brightness(1.1);
+    border-color: rgb(255 255 255 / 0.22);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.18),
+      0 12px 32px -12px rgb(0 0 0 / 0.75),
+      0 0 0 1px rgb(255 255 255 / 0.04);
+  }
+  .btn-3d:active:not(:disabled) {
+    filter: brightness(0.94);
+    transform: scale(0.97);
+  }
+  .btn-3d:focus-visible {
+    outline: 2px solid rgb(56 189 248 / 0.7);
+    outline-offset: 2px;
+  }
+  .btn-3d:disabled {
+    opacity: 0.45;
+    filter: saturate(0.5);
+    cursor: not-allowed;
+  }
+
+  /* ---------- การ์ดกระจกฝ้า ---------- */
+  .card-3d {
+    border: 1px solid rgb(255 255 255 / 0.1);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    backdrop-filter: blur(24px) saturate(140%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 18px 48px -20px rgb(0 0 0 / 0.75);
+  }
+  /* backdrop-filter ทำให้การพลิก 3D เพี้ยนในบางเบราว์เซอร์ */
+  .card-3d.backface-hidden {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .glass {
+    background-color: rgb(255 255 255 / 0.05);
+    border: 1px solid rgb(255 255 255 / 0.1);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    backdrop-filter: blur(24px) saturate(140%);
+  }
+
+  /* แบนเนอร์สถานะโทนสี (โปร่งแสง + เรืองแสงจางๆ) */
+  .tint-mint {
+    background-color: rgb(16 185 129 / 0.16);
+    border-color: rgb(52 211 153 / 0.35);
+    color: #d1fae5;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 0 40px -12px rgb(16 185 129 / 0.55);
+  }
+  .tint-rose {
+    background-color: rgb(244 63 94 / 0.16);
+    border-color: rgb(244 63 94 / 0.32);
+    color: #ffe4e6;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 0 40px -12px rgb(244 63 94 / 0.5);
+  }
+  .tint-sky {
+    background-color: rgb(56 189 248 / 0.14);
+    border-color: rgb(56 189 248 / 0.32);
+    color: #e0f2fe;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 0 40px -12px rgb(56 189 248 / 0.5);
+  }
+
+  .glow-mint {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.25),
+      0 10px 30px -10px rgb(16 185 129 / 0.7);
+  }
+  .glow-sky {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.25),
+      0 10px 30px -10px rgb(56 189 248 / 0.7);
+  }
+
+  .text-gradient {
+    background-image: linear-gradient(100deg, #38bdf8 0%, #34d399 60%, #a7f3d0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* ---------- หลังไพ่: น้ำเงินเข้ม ตัดขอบทองแชมเปญ ---------- */
+  .card-back {
+    position: relative;
+    overflow: hidden;
+    border: 3px solid transparent;
+    background:
+      linear-gradient(150deg, #13224a 0%, #0a1430 50%, #050a1a 100%) padding-box,
+      linear-gradient(135deg, #f7e7c1 0%, #b8955a 30%, #f3e2b3 55%, #8c6d3d 80%, #e9d5a4 100%) border-box;
+    box-shadow:
+      0 20px 50px -18px rgb(0 0 0 / 0.85),
+      0 0 30px -10px rgb(217 185 121 / 0.35);
+  }
+  .card-back__pattern {
+    position: absolute;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(45deg, rgb(217 185 121 / 0.09) 0 1px, transparent 1px 14px),
+      repeating-linear-gradient(-45deg, rgb(217 185 121 / 0.09) 0 1px, transparent 1px 14px),
+      radial-gradient(circle at 50% 45%, rgb(56 189 248 / 0.22), transparent 55%);
+  }
+  .card-back__frame {
+    position: absolute;
+    inset: 8px;
+    border-radius: 1rem;
+    border: 1px solid rgb(217 185 121 / 0.45);
+    box-shadow: inset 0 0 0 3px rgb(5 10 26 / 0.6), inset 0 0 0 4px rgb(217 185 121 / 0.18);
+  }
+  .card-back__sheen {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent 30%, rgb(255 255 255 / 0.1) 45%, transparent 60%);
+  }
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+.animate-wiggle {
+  animation: wiggle 0.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-3d,
+  .btn-3d:active:not(:disabled) {
+    transition: none;
+    transform: none;
+  }
 }
