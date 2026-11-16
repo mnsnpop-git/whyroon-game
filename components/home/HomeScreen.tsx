@@ -5,6 +5,7 @@ import { ArrowRight, DoorOpen, PartyPopper, QrCode } from "lucide-react";
 import { useRef, useState } from "react";
 import { GAMES } from "@/lib/constants";
 import { Button } from "../ui/Button";
+import { HomeMascots } from "./HomeMascots";
 
 export function HomeScreen({
   onCreate,
@@ -23,11 +24,9 @@ export function HomeScreen({
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="mb-10 text-center"
+        className="mb-8 text-center"
       >
-        <div className="mb-2 text-6xl">
-          <span className="inline-block animate-wiggle">🎉</span>
-        </div>
+        <HomeMascots />
         <h1 className="text-5xl font-extrabold leading-tight tracking-tight">
           <span className="text-white">เกมร่าเริง</span>
         </h1>
@@ -133,6 +132,9 @@ export function HomeScreen({
       <p className="mt-10 text-center text-xs text-muted/70">
         ไม่ต้องสมัครสมาชิก · ดื่มอย่างรับผิดชอบ 🍻 · เมาไม่ขับ
       </p>
+      <footer className="mt-3 text-center text-xs text-white/35">
+        © 2026 Bobby Girl
+      </footer>
     </main>
   );
 }
